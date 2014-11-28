@@ -1,26 +1,29 @@
-## freshdesk-api ##
-A Ruby API client that interfaces with freshdesk.com web service. This client supports regular CRUD operation 
+## freshservice-api ##
+A Ruby API client that interfaces with freshservice.com web service. This client supports regular CRUD operation 
 
-Freshdesk's API docs are here [http://freshdesk.com/api/](http://freshdesk.com/api/)
+Freshservice's API docs are here [http://freshservice.com/api/](http://freshservice.com/api/)
 
 As of now, it supports the following: 
 
   - tickets
+  - problems
+  - changes
+  - releases
   - users
-  - forums
-  - solutions
-  - companies
+  - solution_categories
+  - departments
+  - assets
 
 ## Usage Example ##
 
 ```
-client = Freshdesk.new("http://companyname.freshdesk.com/", "user@domain.com", "password")  
+client = Freshservice.new("http://companyname.freshservice.com/", "user@domain.com", "password")  
 # note trailing slash in domain is required
 
 response = client.get_users  
 client.get_users 123  
-client.post_users(:name => "test", :email => "test@143124test.com", :customer => "name")  
-client.put_users(:id =>123, :name => "test", :email => "test@143124test.com", :customer => "name")  
+client.post_users(:name => "test", :email => "test@143124test.com")  
+client.put_users(:id =>123, :name => "test", :email => "test@143124test.com")  
 client.delete_tickets 123  
 
 # example of working with users
@@ -49,7 +52,7 @@ client.get_companies(id - optional)
 client.post_users(key1 => value, key2 => value2, ...)
 
 # example posts a ticket
-client.post_tickets(:email => "user@domain.com", :description => "test ticket from rails app", :name => "Customer Name", :source => 2, :priority => 2, :name => "Joshua Siler")
+client.post_tickets(:email => "user@domain.com", :description => "test ticket from rails app", :source => 2, :priority => 2, :name => "Joshua Siler")
 # etc.
 ```
 

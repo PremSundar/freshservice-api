@@ -1,8 +1,8 @@
 #!/bin/bash 
 
-if [ -e freshdesk-0.1.gem ]; then 
-  rm freshdesk-0.1.gem
+if [ -e freshservice-0.1.gem ]; then 
+  rm freshservice-0.1.gem
 fi 
 
-gem build freshdesk.gemspec
-sudo gem install freshdesk-0.1.gem
+gem build freshservice.gemspec
+sudo gem install freshservice-0.1.gem

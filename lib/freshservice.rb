@@ -2,7 +2,7 @@ require 'rest_client'
 require 'nokogiri'
 require 'uri'
 
-class Freshdesk
+class Freshservice
 
   # custom errors
   class AlreadyExistedError < StandardError; end
@@ -16,19 +16,6 @@ class Freshdesk
     @auth = {:user => username, :password => password}
   end
 
-  def response_format
-    @response_format ||= "xml"
-  end
-
-  # Specify the response format to use--JSON or XML. Currently JSON is only
-  # supported for GETs, so other verbs will still use XML.
-  def response_format=(format)
-    unless format.downcase =~ /json|xml/
-      raise StandardError "Unsupported format: '#{format}'. Please specify 'xml' or 'json'."
-    end
-    @response_format = format.downcase
-  end
-
   # Freshdesk API client support "GET" with id parameter optional
   #   Returns nil if there is no response
   def self.fd_define_get(name)
@@ -37,19 +24,17 @@ class Freshdesk
 
     define_method method_name do |*args|
       uri = mapping(name)
-      uri.gsub!(/\.xml/, "\.#{response_format}")
-
       # If we've been passed a string paramter, it means we're fetching
-      # something like domain_URL/helpdesk/tickets/[ticket_id].xml
+      # something like domain_URL/helpdesk/tickets/[ticket_id].json
       #
       # If we're supplied with a hash parameter, it means we're fetching
-      # something like domain_URL/helpdesk/tickets.xml?filter_name=all_tickets&page=[value]
+      # something like domain_URL/helpdesk/tickets.json?filter_name=all_tickets&page=[value]
       if args.size > 0
         url_args = args.first
         if url_args.class == Hash
           uri += '?' + URI.encode_www_form(url_args)
         else
-          uri.gsub!(/\.#{response_format}/, "/#{url_args}\.#{response_format}")
+          uri.gsub!(/\.json/, "/#{url_args}\.json")
         end
       end
 
@@ -63,34 +48,33 @@ class Freshdesk
 
   # Certain GET calls require query strings instead of a more
   # RESTful URI. This method and fd_define_get are mutually exclusive.
-  def self.fd_define_parameterized_get(name)
-    name = name.to_s
-    method_name = "get_" + name
+  # def self.fd_define_parameterized_get(name)
+  #   name = name.to_s
+  #   method_name = "get_" + name
 
-    define_method method_name do |params={}|
-      uri = mapping(name)
-      uri.gsub!(/\.xml/, ".#{response_format}")
-      unless params.empty?
-        uri += '?' + URI.encode_www_form(params)
-      end
+  #   define_method method_name do |params={}|
+  #     uri = mapping(name)
+  #     uri.gsub!(/\.json/, ".json")
+  #     unless params.empty?
+  #       uri += '?' + URI.encode_www_form(params)
+  #     end
 
-      begin
-        response = RestClient::Request.execute(@auth.merge(:method => :get, :url => uri))
-      rescue Exception
-        response = nil
-      end
-    end
-  end
+  #     begin
+  #       response = RestClient::Request.execute(@auth.merge(:method => :get, :url => uri))
+  #     rescue Exception
+  #       response = nil
+  #     end
+  #   end
+  # end
 
   # Freshdesk API client support "DELETE" with the required id parameter
   def self.fd_define_delete(name)
     name = name.to_s
     method_name = "delete_" + name
-
     define_method method_name do |args|
       uri = mapping(name)
       raise StandardError, "An ID is required to delete" if args.size.eql? 0
-      uri.gsub!(/.xml/, "/#{args}.xml")
+      uri.gsub!(/.json/, "/#{args}.json")
       RestClient::Request.execute(@auth.merge(:method => :delete, :url => uri))
     end
   end
@@ -105,34 +89,36 @@ class Freshdesk
     method_name = "post_" + name
 
     define_method method_name do |args, id=nil|
+      debugger
       raise StandardError, "Arguments are required to modify data" if args.size.eql? 0
+      id = args[:id]
       uri = mapping(name, id)
 
-      builder = Nokogiri::XML::Builder.new do |xml|
-        xml.send(doc_name(name)) {
+      builder = Nokogiri::XML::Builder.new do |json|
+        json.send(doc_name(name)) {
           if args.has_key? :attachment
             attachment_name = args[:attachment][:name] or raise StandardError, "Attachment name required"
             attachment_cdata = args[:attachment][:cdata] or raise StandardError, "Attachment CDATA required"
-            xml.send("attachments", type: "array") {
-              xml.send("attachment") {
-                xml.send("resource", "type" => "file", "name" => attachment_name, "content-type" => "application/octet-stream") {
-                  xml.cdata attachment_cdata
+            json.send("attachments", type: "array") {
+              json.send("attachment") {
+                json.send("resource", "type" => "file", "name" => attachment_name, "content-type" => "application/octet-stream") {
+                  json.cdata attachment_cdata
                 }
               }
             }
           args.except! :attachment
           end
           args.each do |key, value|
-            xml.send(key, value)
+            json.send(key, value)
           end
         }
       end
-
+      data = Hash.from_xml(builder.to_xml)
       begin
         options = @auth.merge(
           :method => :post,
-          :payload => builder.to_xml,
-          :headers => {:content_type => "text/xml"},
+          :payload => data,
+          :headers => {:content_type => "text/json"},
           :url => uri
         )
         response = RestClient::Request.execute(options)
@@ -166,20 +152,20 @@ class Freshdesk
       raise StandardError, "id is required to modify data" if args[:id].nil?
       uri = mapping(name)
 
-      builder = Nokogiri::XML::Builder.new do |xml|
-        xml.send(doc_name(name)) {
+      builder = Nokogiri::XML::Builder.new do |json|
+        json.send(doc_name(name)) {
           args.each do |key, value|
-            xml.send(key, value)
+            json.send(key, value)
           end
         }
       end
-
+      data = Hash.from_xml(builder.to_xml)
       begin
-        uri.gsub!(/.xml/, "/#{args[:id]}.xml")
+        uri.gsub!(/.json/, "/#{args[:id]}.json")
         options = @auth.merge(
           :method => :put,
-          :payload => builder.to_xml,
-          :headers => {:content_type => "text/xml"},
+          :payload => data,
+          :headers => {:content_type => "text/json"},
           :url => uri
         )
         response = RestClient::Request.execute(options)
@@ -197,47 +183,75 @@ class Freshdesk
     end
   end
 
-  [:tickets, :ticket_fields, :ticket_notes, :users, :forums, :solutions, :companies, :time_sheets].each do |a|
+  [:tickets,  :problems, :changes, :releases, :users, :solutions, :departments, :config_items].each do |a|
     fd_define_get a
     fd_define_post a
     fd_define_delete a
     fd_define_put a
   end
 
-  [:user_ticket].each do |resource|
-    fd_define_parameterized_get resource
+  [:ticket_fields, :problem_fields, :change_fields, :release_fields, :ci_types, :ci_type_fields].each do |a|
+    fd_define_get a
   end
+
+  [:ticket_notes, :problem_notes, :change_notes, :release_notes].each do |a|
+    fd_define_post a
+  end
+
+  # [:user_ticket].each do |resource|
+  #   fd_define_parameterized_get resource
+  # end
 
 
   # Mapping of object name to url:
-  #   tickets => helpdesk/tickets.xml
-  #   ticket_fields => /ticket_fields.xml
-  #   users => /contacts.xml
-  #   forums => /categories.xml
-  #   solutions => /solution/categories.xml
-  #   companies => /customers.xml
+  #   tickets => helpdesk/tickets.json
+  #   ticket_fields => /ticket_fields.json
+  #   users => /contacts.json
+  #   forums => /categories.json
+  #   solutions => /solution/categories.json
+  #   companies => /customers.json
   def mapping(method_name, id = nil)
     case method_name
-      when "tickets" then File.join(@base_url + "helpdesk/tickets.xml")
-      when "user_ticket" then File.join(@base_url + "helpdesk/tickets/user_ticket.xml")
-      when "ticket_fields" then File.join(@base_url, "ticket_fields.xml")
-      when "ticket_notes" then File.join(@base_url, "helpdesk/tickets/#{id}/notes.xml")
-      when "users" then File.join(@base_url, "contacts.xml")
-      when "forums" then File.join(@base_url + "categories.xml")
-      when "solutions" then File.join(@base_url + "solution/categories.xml")
-      when "companies" then File.join(@base_url + "customers.xml")
-      when "time_sheets" then File.join(@base_url + "helpdesk/time_sheets.xml")
+      when "tickets" then File.join(@base_url + "helpdesk/tickets.json")
+      when "ticket_fields" then File.join(@base_url, "ticket_fields.json")
+      when "ticket_notes" then File.join(@base_url, "helpdesk/tickets/#{id}/notes.json")
+      when "problems" then File.join(@base_url + "itil/problems.json")
+      when "problem_fields" then File.join(@base_url, "itil/problem_fields.json")
+      when "problem_notes" then File.join(@base_url, "itil/problems/#{id}/notes.json")
+      when "changes" then File.join(@base_url + "itil/changes.json")
+      when "change_fields" then File.join(@base_url, "itil/change_fields.json")
+      when "change_notes" then File.join(@base_url, "itil/changes/#{id}/notes.json")
+      when "releases" then File.join(@base_url + "itil/releases.json")
+      when "release_fields" then File.join(@base_url, "itil/release_fields.json")
+      when "release_notes" then File.join(@base_url, "itil/releases/#{id}/notes.json")
+      when "users" then File.join(@base_url, "itil/requesters.json")
+      when "solutions" then File.join(@base_url + "solution/categories.json")
+      when "departments" then File.join(@base_url + "itil/departments.json")
+      when "config_items" then File.join(@base_url + "cmdb/items.json")
+      when "ci_types" then File.join(@base_url + "cmdb/ci_types.json")
+      when "ci_type_fields" then File.join(@base_url + "cmdb/ci_types.json")
     end
   end
 
-  # match with the root name of xml document that freskdesk uses
+  # match with the root name of json document that freskdesk uses
   def doc_name(name)
     case name
       when "tickets" then "helpdesk_ticket"
-      when "ticket_fields" then "helpdesk-ticket-fields"
+      # when "ticket_fields" then "helpdesk-ticket-fields"
       when "ticket_notes" then "helpdesk_note"
+      when "problems" then "itil_problem"
+      # when "problem_fields" then "itil_problem_fields"
+      when "problem_notes" then "itil_note"
+      when "changes" then "itil_change"
+      # when "change_fields" then "itil_change_fields"
+      when "change_notes" then "itil_note"
+      when "releases" then "itil_release"
+      # when "release_fields" then "itil_release_fields"
+      when "release_notes" then "itil_note"
       when "users" then "user"
-      when "companies" then "customer"
+      when "departments" then "itil_department"
+      when "config_items" then "cmdb_config_item"
+      when "solutions" then "solution_category"
       else raise StandardError, "No root object for this call"
     end
   end
