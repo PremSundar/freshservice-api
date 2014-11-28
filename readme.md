@@ -12,7 +12,7 @@ As of now, it supports the following:
   - users
   - solution_categories
   - departments
-  - assets
+  - assets(config_items)
 
 ## Usage Example ##
 
@@ -26,24 +26,19 @@ client.post_users(:name => "test", :email => "test@143124test.com")
 client.put_users(:id =>123, :name => "test", :email => "test@143124test.com")  
 client.delete_tickets 123  
 
-# example of working with users
-users = REXML::Document.new(client.get_users)
-users.elements.each("users/user") { |u|
-			puts u.elements['email'].text
-			puts u.elements['id'].text
-		}
-
 ```
 
 ## GET request ##
 
 ```
 client.get_tickets(id - optional)
-client.get_user_ticket({:email => 'foo@example.com})
+client.get_problems(id - optional)
+client.get_changes(id - optional)
+client.get_releases(id - optional)
 client.get_users(id - optional)
-client.get_forums(id - optional)
-client.get_solutions(id - optional)
-client.get_companies(id - optional)
+client.get_solution_categories(id - optional)
+client.get_departments(id - optional)
+client.get_config_items(id - optional)
 ```
 
 ## POST request ##
