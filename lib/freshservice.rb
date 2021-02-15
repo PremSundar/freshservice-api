@@ -88,8 +88,7 @@ class Freshservice
     name = name.to_s
     method_name = "post_" + name
 
-    define_method method_name do |args, id=nil|
-      debugger
+    define_method method_name do |args, id = nil|
       raise StandardError, "Arguments are required to modify data" if args.size.eql? 0
       id = args[:id]
       uri = mapping(name, id)
