@@ -24,6 +24,7 @@ class Freshservice
 
     define_method method_name do |*args|
       uri = mapping(name)
+      debugger
       # If we've been passed a string paramter, it means we're fetching
       # something like domain_URL/helpdesk/tickets/[ticket_id].json
       #
