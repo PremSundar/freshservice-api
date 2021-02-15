@@ -23,7 +23,6 @@ class Freshservice
     method_name = "get_" + name
 
     define_method method_name do |*args|
-      debugger
       uri = mapping(name)
       # If we've been passed a string paramter, it means we're fetching
       # something like domain_URL/helpdesk/tickets/[ticket_id].json
@@ -35,8 +34,7 @@ class Freshservice
         if url_args.class == Hash
           uri += '?' + URI.encode_www_form(url_args)
         else
-          debugger
-          uri.gsub!(/\.json/, "/#{url_args}\.json")
+          uri.gsub!(/\.json/, "/#{url_args}.json")
         end
       end
 
