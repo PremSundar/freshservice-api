@@ -34,6 +34,7 @@ class Freshservice
         if url_args.class == Hash
           uri += '?' + URI.encode_www_form(url_args)
         else
+          debugger
           uri.gsub!(/\.json/, "/#{url_args}\.json")
         end
       end
