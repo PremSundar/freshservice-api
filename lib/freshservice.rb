@@ -34,12 +34,12 @@ class Freshservice
         if url_args.class == Hash
           uri += '?' + URI.encode_www_form(url_args)
         else
-          uri.gsub!(/\.json/, "/#{url_args}\.json")
+          uri.gsub!(/\.json/, "/#{url_args}.json")
         end
       end
 
       begin
-        response = RestClient::Request.execute(@auth.merge(:method => :get, :url => uri))
+        response = RestClient::Request.execute(@auth.merge(:method => :get, :url => uri, :content_type => "text/json"))
       rescue Exception
         response = nil
       end
@@ -89,7 +89,6 @@ class Freshservice
     method_name = "post_" + name
 
     define_method method_name do |args, id=nil|
-      debugger
       raise StandardError, "Arguments are required to modify data" if args.size.eql? 0
       id = args[:id]
       uri = mapping(name, id)
@@ -183,18 +182,18 @@ class Freshservice
     end
   end
 
-  [:tickets,  :problems, :changes, :releases, :users, :solutions, :departments, :config_items].each do |a|
+  %i[tickets problems changes releases users solutions departments config_items items categories].each do |a|
     fd_define_get a
     fd_define_post a
     fd_define_delete a
     fd_define_put a
   end
 
-  [:ticket_fields, :problem_fields, :change_fields, :release_fields, :ci_types, :ci_type_fields].each do |a|
+  %i[ticket_fields problem_fields change_fields release_fields ci_types ci_type_fields items_fields].each do |a|
     fd_define_get a
   end
 
-  [:ticket_notes, :problem_notes, :change_notes, :release_notes].each do |a|
+  %i[ticket_notes problem_notes change_notes release_notes].each do |a|
     fd_define_post a
   end
 
@@ -230,10 +229,12 @@ class Freshservice
       when "config_items" then File.join(@base_url + "cmdb/items.json")
       when "ci_types" then File.join(@base_url + "cmdb/ci_types.json")
       when "ci_type_fields" then File.join(@base_url + "cmdb/ci_types.json")
+      when "items" then File.join(@base_url + "catalog/items.json")
+      when "categories" then File.join(@base_url + "catalog/categories.json")
     end
   end
 
-  # match with the root name of json document that freskdesk uses
+  # match with the root name of json document that freshdesk uses
   def doc_name(name)
     case name
       when "tickets" then "helpdesk_ticket"
@@ -252,6 +253,8 @@ class Freshservice
       when "departments" then "itil_department"
       when "config_items" then "cmdb_config_item"
       when "solutions" then "solution_category"
+      when 'items' then 'catalog-items'
+      when 'categories' then 'catalog-categories'
       else raise StandardError, "No root object for this call"
     end
   end
