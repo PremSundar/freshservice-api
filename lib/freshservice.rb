@@ -253,6 +253,8 @@ class Freshservice
       when "departments" then "itil_department"
       when "config_items" then "cmdb_config_item"
       when "solutions" then "solution_category"
+      when 'items' then 'catalog-items'
+      when 'categories' then 'catalog-categories'
       else raise StandardError, "No root object for this call"
     end
   end
