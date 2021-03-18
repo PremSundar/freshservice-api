@@ -189,7 +189,7 @@ class Freshservice
     fd_define_put a
   end
 
-  %i[ticket_fields problem_fields change_fields release_fields ci_types ci_type_fields].each do |a|
+  %i[ticket_fields problem_fields change_fields release_fields ci_types ci_type_fields items_fields].each do |a|
     fd_define_get a
   end
 
