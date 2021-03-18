@@ -39,7 +39,7 @@ class Freshservice
       end
 
       begin
-        response = RestClient::Request.execute(@auth.merge(:method => :get, :url => uri))
+        response = RestClient::Request.execute(@auth.merge(:method => :get, :url => uri, :content_type => "text/json"))
       rescue Exception
         response = nil
       end
@@ -182,18 +182,18 @@ class Freshservice
     end
   end
 
-  [:tickets,  :problems, :changes, :releases, :users, :solutions, :departments, :config_items].each do |a|
+  %i[tickets problems changes releases users solutions departments config_items items categories].each do |a|
     fd_define_get a
     fd_define_post a
     fd_define_delete a
     fd_define_put a
   end
 
-  [:ticket_fields, :problem_fields, :change_fields, :release_fields, :ci_types, :ci_type_fields].each do |a|
+  %i[ticket_fields problem_fields change_fields release_fields ci_types ci_type_fields].each do |a|
     fd_define_get a
   end
 
-  [:ticket_notes, :problem_notes, :change_notes, :release_notes].each do |a|
+  %i[ticket_notes problem_notes change_notes release_notes].each do |a|
     fd_define_post a
   end
 
