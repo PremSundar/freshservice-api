@@ -229,8 +229,8 @@ class Freshservice
       when "config_items" then File.join(@base_url + "cmdb/items.json")
       when "ci_types" then File.join(@base_url + "cmdb/ci_types.json")
       when "ci_type_fields" then File.join(@base_url + "cmdb/ci_types.json")
-      when "items" then File.join(@base_url + "/catalog/items.json")
-      when "categories" then File.join(@base_url + "/catalog/categories.json")
+      when "items" then File.join(@base_url + "catalog/items.json")
+      when "categories" then File.join(@base_url + "catalog/categories.json")
     end
   end
 
